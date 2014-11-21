@@ -124,3 +124,10 @@ func getSubdomain(r *http.Request) string {
 	i := strings.Index(r.Host, ".")
 	return r.Host[0:i]
 }
+
+func prefixSlash(path string) string {
+	if path[0:1] == "/" {
+		return path
+	}
+	return "/" + path
+}

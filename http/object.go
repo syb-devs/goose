@@ -15,6 +15,7 @@ var ErrNoBucketURL = NewError(404, "invalid bucket in URL")
 
 func serveObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
 	bucketName, fileName, err := getBucketObjectNames(r)
+	log.Printf("\nBucket: %s\nFile: %s", bucketName, fileName)
 	if err != nil {
 		return processError(err)
 	}
@@ -36,7 +37,7 @@ func serveObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
 }
 
 func postObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
-	fname := r.URL.Query().Get("name")
+	fname := prefixSlash(r.URL.Query().Get("name"))
 	log.Printf("Posting object with path %s", fname)
 
 	bucket, err := getBucketAndCheckAccess(ctx, ctx.URLParams.ByName("bucket"), "id", "write")
@@ -60,6 +61,7 @@ func postObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
 	}
 	defer object.Close()
 	return writeJSON(w, object)
+
 }
 
 func getObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
@@ -139,7 +141,7 @@ func getBucketObjectNames(r *http.Request) (bucket, object string, err error) {
 		if len(urlParts) < 2 {
 			return "", "", ErrNoBucketURL
 		}
-		return urlParts[0], urlParts[1], nil
+		return urlParts[0], prefixSlash(urlParts[1]), nil
 	}
 	return subdomain, r.URL.RequestURI(), nil
 }
