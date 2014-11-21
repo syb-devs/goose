@@ -1,4 +1,4 @@
-package http
+package main
 
 import (
 	"encoding/json"
@@ -9,26 +9,27 @@ import (
 	"strings"
 
 	"bitbucket.org/syb-devs/goose"
+	ghttp "bitbucket.org/syb-devs/goose/http"
 )
 
-var ErrNoBucketURL = NewError(404, "invalid bucket in URL")
+var ErrNoBucketURL = ghttp.NewError(404, "invalid bucket in URL")
 
-func serveObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	bucketName, fileName, err := getBucketObjectNames(r)
 	log.Printf("\nBucket: %s\nFile: %s", bucketName, fileName)
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 
 	bucket, err := getBucketAndCheckAccess(ctx, bucketName, "name", "read")
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 
 	repo := goose.NewObjectRepo(ctx.DB)
 	obj, err := repo.Open(fileName, bucket.ID)
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 
 	defer obj.Close()
@@ -36,13 +37,13 @@ func serveObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
 	return err
 }
 
-func postObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
-	fname := prefixSlash(r.URL.Query().Get("name"))
+func postObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
+	fname := ghttp.PrefixSlash(r.URL.Query().Get("name"))
 	log.Printf("Posting object with path %s", fname)
 
 	bucket, err := getBucketAndCheckAccess(ctx, ctx.URLParams.ByName("bucket"), "id", "write")
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 
 	meta := &goose.ObjectMetadata{BucketID: bucket.ID}
@@ -60,20 +61,20 @@ func postObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
 		object, err = repo.Create(r.Body, fname, r.Header.Get("Content-Type"), meta)
 	}
 	defer object.Close()
-	return writeJSON(w, object)
+	return ghttp.WriteJSON(w, object)
 
 }
 
-func getObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func getObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	repo := goose.NewObjectRepo(ctx.DB)
 	object, err := repo.OpenId(ctx.URLParams.ByName("object"))
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
-	return writeJSON(w, object)
+	return ghttp.WriteJSON(w, object)
 }
 
-func deleteObject(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func deleteObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	repo := goose.NewObjectRepo(ctx.DB)
 	return repo.DeleteId(ctx.URLParams.ByName("object"))
 }
@@ -86,22 +87,22 @@ func objectFromRequest(r http.Request) (*goose.Object, error) {
 	return object, err
 }
 
-func postObjectMetadata(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func postObjectMetadata(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	repo := goose.NewObjectRepo(ctx.DB)
 	object, err := repo.OpenId(ctx.URLParams.ByName("object"))
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 	meta := object.Metadata()
 	dec := json.NewDecoder(r.Body)
 	err = dec.Decode(meta)
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 	return repo.UpdateMetada(object.Id().Hex(), object.Name(), *meta)
 }
 
-func getBucketAndCheckAccess(ctx *Context, key, keyType, op string) (*goose.Bucket, error) {
+func getBucketAndCheckAccess(ctx *ghttp.Context, key, keyType, op string) (*goose.Bucket, error) {
 	br := goose.NewBucketRepo(ctx.DB)
 	var err error
 	var bucket *goose.Bucket
@@ -122,11 +123,11 @@ func getBucketAndCheckAccess(ctx *Context, key, keyType, op string) (*goose.Buck
 	switch op {
 	case "read":
 		if !ctx.User.CanWriteBucket(bucket) {
-			return bucket, ErrForbidden
+			return bucket, ghttp.ErrForbidden
 		}
 	case "write":
 		if !ctx.User.CanWriteBucket(bucket) {
-			return bucket, ErrForbidden
+			return bucket, ghttp.ErrForbidden
 		}
 	default:
 		return bucket, errors.New("invalid value for op (accepted are 'read' and 'write'")
@@ -135,13 +136,13 @@ func getBucketAndCheckAccess(ctx *Context, key, keyType, op string) (*goose.Buck
 }
 
 func getBucketObjectNames(r *http.Request) (bucket, object string, err error) {
-	subdomain := getSubdomain(r)
+	subdomain := ghttp.GetSubdomain(r)
 	if subdomain == "storage" {
 		urlParts := strings.SplitN(r.URL.RequestURI()[1:], "/", 2)
 		if len(urlParts) < 2 {
 			return "", "", ErrNoBucketURL
 		}
-		return urlParts[0], prefixSlash(urlParts[1]), nil
+		return urlParts[0], ghttp.PrefixSlash(urlParts[1]), nil
 	}
 	return subdomain, r.URL.RequestURI(), nil
 }

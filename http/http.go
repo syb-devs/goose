@@ -35,10 +35,6 @@ func (ps URLParams) ByName(name string) string {
 	return ps[name]
 }
 
-type Router struct {
-	*httptreemux.TreeMux
-}
-
 // HandlerAdapter is a function adapter which converts a Goose HandlerFunc to a httptreemux.HandlerFunc
 func HandlerAdapter(f HandlerFunc) httptreemux.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, ps map[string]string) {
@@ -104,13 +100,13 @@ func enableCORS(h http.Handler) http.Handler {
 	})
 }
 
-func writeJSON(w http.ResponseWriter, d interface{}) error {
+func WriteJSON(w http.ResponseWriter, d interface{}) error {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", "application/json")
 	return enc.Encode(d)
 }
 
-func processError(err error) error {
+func ProcessError(err error) error {
 	if err == goose.ErrNotFound {
 		return NewError(404, "Not found")
 	}
@@ -120,12 +116,12 @@ func processError(err error) error {
 	return err
 }
 
-func getSubdomain(r *http.Request) string {
+func GetSubdomain(r *http.Request) string {
 	i := strings.Index(r.Host, ".")
 	return r.Host[0:i]
 }
 
-func prefixSlash(path string) string {
+func PrefixSlash(path string) string {
 	if path[0:1] == "/" {
 		return path
 	}

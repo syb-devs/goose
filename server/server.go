@@ -7,13 +7,23 @@ import (
 	"os"
 
 	"bitbucket.org/syb-devs/goose"
-	ghttp "bitbucket.org/syb-devs/goose/http"
 )
 
 func main() {
-	addr := fmt.Sprintf(":%s", os.Getenv("PORT"))
+	goose.NewDBConn(goose.DBOptions{
+		Database:     envDefault("DBNAME", "goose"),
+		URL:          envDefault("MONGOURL", "localhost"),
+		SetAsDefault: true,
+	})
 
-	goose.NewDBConn(goose.DBOptions{Database: "goose", URL: "172.17.0.2", SetAsDefault: true})
+	addr := fmt.Sprintf(":%s", envDefault("PORT", "8080"))
+	log.Fatal(http.ListenAndServe(addr, NewRouter().WithRoutes()))
+}
 
-	log.Fatal(http.ListenAndServe(addr, ghttp.NewRouter().WithRoutes()))
+func envDefault(key, defval string) string {
+	val := os.Getenv(key)
+	if val != "" {
+		return val
+	}
+	return defval
 }

@@ -1,15 +1,16 @@
-package http
+package main
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"bitbucket.org/syb-devs/goose"
+	ghttp "bitbucket.org/syb-devs/goose/http"
 )
 
-var ErrBucketExists = NewError(409, "the bucket already exists")
+var ErrBucketExists = ghttp.NewError(409, "the bucket already exists")
 
-func postBucket(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func postBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	//TODO: validation of the POSTed data
 	repo := goose.NewBucketRepo(ctx.DB)
 	bucket, err := bucketFromRequest(*r)
@@ -23,29 +24,29 @@ func postBucket(w http.ResponseWriter, r *http.Request, ctx *Context) error {
 	if err != nil {
 		return err
 	}
-	return writeJSON(w, bucket)
+	return ghttp.WriteJSON(w, bucket)
 }
 
-func getBucket(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func getBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	repo := goose.NewBucketRepo(ctx.DB)
 	bucket, err := repo.FindId(ctx.URLParams.ByName("bucket"))
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 	if !ctx.User.CanReadBucket(bucket) {
-		return ErrForbidden
+		return ghttp.ErrForbidden
 	}
-	return writeJSON(w, bucket)
+	return ghttp.WriteJSON(w, bucket)
 }
 
-func putBucket(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func putBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	repo := goose.NewBucketRepo(ctx.DB)
 	bucket, err := repo.FindId(ctx.URLParams.ByName("bucket"))
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 	if !ctx.User.CanWriteBucket(bucket) {
-		return ErrForbidden
+		return ghttp.ErrForbidden
 	}
 	dec := json.NewDecoder(r.Body)
 	err = dec.Decode(bucket)
@@ -53,21 +54,21 @@ func putBucket(w http.ResponseWriter, r *http.Request, ctx *Context) error {
 		return err
 	}
 	if err = repo.Update(bucket); err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
-	return writeJSON(w, bucket)
+	return ghttp.WriteJSON(w, bucket)
 }
 
-func deleteBucket(w http.ResponseWriter, r *http.Request, ctx *Context) error {
+func deleteBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	repo := goose.NewBucketRepo(ctx.DB)
 	bucket, err := repo.FindId(ctx.URLParams.ByName("bucket"))
 	if err != nil {
-		return processError(err)
+		return ghttp.ProcessError(err)
 	}
 	if !ctx.User.CanWriteBucket(bucket) {
-		return ErrForbidden
+		return ghttp.ErrForbidden
 	}
-	return processError(repo.DeleteId(ctx.URLParams.ByName("bucket")))
+	return ghttp.ProcessError(repo.DeleteId(ctx.URLParams.ByName("bucket")))
 }
 
 func bucketFromRequest(r http.Request) (*goose.Bucket, error) {
