@@ -23,6 +23,9 @@ curl --tr-encoding -X POST -v -# -o output -T Book.pdf -H "Content-Type: applica
 ## Roadmap
 
 - Whitelist for selective unmarshaling of JSON in structs
+- Filter by bucket when serving a file
+- Error and debug logging
+- Data validation for POST / PUT
 - JWT auth
 - API Client for integration in other Go services
 - Dockerize the app for easier deployment
