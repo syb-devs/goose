@@ -22,7 +22,6 @@ curl --tr-encoding -X POST -v -# -o output -T Book.pdf -H "Content-Type: applica
 
 ## Roadmap
 
-- Indexing MongoDB collections (filename, bucketId...)
 - Whitelist for selective unmarshaling of JSON in structs
 - JWT auth
 - API Client for integration in other Go services

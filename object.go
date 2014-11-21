@@ -8,8 +8,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var objectURLBase = "/objects/serve"
-
 func init() {
 	RegisterDBInitTask(func(db *DBConn) error { return NewObjectRepo(db).Init() })
 }
@@ -65,15 +63,18 @@ func NewObjectRepo(db *DBConn) *objectRepo {
 	return &objectRepo{gfs: db.GridFS("fs"), db: db}
 }
 
-func (fr *objectRepo) Init() error {
-	if err := fr.gfs.Files.EnsureIndexKey("metadata.title", "text"); err != nil {
-		return err
+func (or *objectRepo) Init() error {
+	index := mgo.Index{
+		Key:        []string{"filename", "metadata.bucketId"},
+		Unique:     false,
+		Background: false,
+		Sparse:     false,
 	}
-	return fr.gfs.Files.EnsureIndexKey("objectname", "text")
+	return or.gfs.Files.EnsureIndex(index)
 }
 
-func (fr *objectRepo) create(name, ctype string, metadata *ObjectMetadata) (*Object, error) {
-	gObject, err := fr.gfs.Create(name)
+func (or *objectRepo) create(name, ctype string, metadata *ObjectMetadata) (*Object, error) {
+	gObject, err := or.gfs.Create(name)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +91,8 @@ func (fr *objectRepo) create(name, ctype string, metadata *ObjectMetadata) (*Obj
 	return object, nil
 }
 
-func (fr *objectRepo) Create(r io.Reader, name, ctype string, metadata *ObjectMetadata) (*Object, error) {
-	object, err := fr.create(name, ctype, metadata)
+func (or *objectRepo) Create(r io.Reader, name, ctype string, metadata *ObjectMetadata) (*Object, error) {
+	object, err := or.create(name, ctype, metadata)
 	if err != nil {
 		return object, err
 	}

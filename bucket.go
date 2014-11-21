@@ -6,13 +6,17 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+func init() {
+	RegisterDBInitTask(func(db *DBConn) error { return NewBucketRepo(db).Init() })
+}
+
 type Bucket struct {
 	ID          bson.ObjectId `bson:"_id" json:"Id"`
-	Name        string
+	Name        string        `bson:"name"`
 	Collection  string
 	Objects     int
 	Size        int
-	time.Stamps `bson:",inline" `
+	time.Stamps `bson:",inline"`
 }
 
 type bucketRepo struct {
@@ -24,6 +28,17 @@ type bucketRepo struct {
 
 func NewBucketRepo(db *DBConn) *bucketRepo {
 	return &bucketRepo{db: db, col: db.C("buckets")}
+}
+
+func (fr *bucketRepo) Init() error {
+	index := mgo.Index{
+		Key:        []string{"name"},
+		Unique:     true,
+		DropDups:   false,
+		Background: false,
+		Sparse:     false,
+	}
+	return fr.col.EnsureIndex(index)
 }
 
 func (r *bucketRepo) Insert(c *Bucket) error {
