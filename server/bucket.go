@@ -8,6 +8,8 @@ import (
 	ghttp "bitbucket.org/syb-devs/goose/http"
 )
 
+// ErrBucketExists represents an HTTP 409 error, returned when the user is trying to create a bucket,
+// but another with the same name already exists
 var ErrBucketExists = ghttp.NewError(409, "the bucket already exists")
 
 func postBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {

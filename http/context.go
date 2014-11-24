@@ -7,7 +7,7 @@ import (
 	"bitbucket.org/syb-devs/goose"
 )
 
-// context holds data which should be isolated for a single request
+// Context holds request-specific data
 type Context struct {
 	DB        *goose.DBConn
 	URLParams URLParams

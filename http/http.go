@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -12,23 +11,30 @@ import (
 	"github.com/dimfeld/httptreemux"
 )
 
+// ErrForbidden represents an HTTP 403 error
 var ErrForbidden = NewError(403, "Forbidden")
 
+// HandlerFunc is used for HTTP handlers. In addition to the ResponseWriter and Request objects, they receive a Context object
+// and should return an error
 type HandlerFunc func(http.ResponseWriter, *http.Request, *Context) error
 
+// Error represents an HTTP Error
 type Error struct {
 	Code    int
 	Message string
 }
 
+// NewError returns a new Error with the given HTTP code and message
 func NewError(code int, message string) *Error {
 	return &Error{Code: code, Message: message}
 }
 
+// Error returns the HTTP Error message as a string
 func (e Error) Error() string {
 	return fmt.Sprintf("HTTP %d: %s", e.Code, e.Message)
 }
 
+// URLParams contains a map with the parameter names and values from the URL as defined in the routes
 type URLParams map[string]string
 
 func (ps URLParams) ByName(name string) string {
@@ -38,7 +44,6 @@ func (ps URLParams) ByName(name string) string {
 // HandlerAdapter is a function adapter which converts a Goose HandlerFunc to a httptreemux.HandlerFunc
 func HandlerAdapter(f HandlerFunc) httptreemux.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, ps map[string]string) {
-		log.Printf("\nserving %v", r.URL.RequestURI())
 		defer panicHandler(w, r)
 
 		ctx, err := newContext(r, ps)
@@ -59,7 +64,7 @@ func HandlerAdapter(f HandlerFunc) httptreemux.HandlerFunc {
 
 func panicHandler(w http.ResponseWriter, r *http.Request) {
 	if p := recover(); p != nil {
-		log.Printf("recovering from panic: %v %s", p, debug.Stack())
+		goose.Log.Critical(fmt.Sprintf("recovering from panic: %v. \nstack trace: %s", p, debug.Stack()))
 
 		if err, ok := p.(error); ok {
 			handleError(w, r, err)
@@ -68,7 +73,7 @@ func panicHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
-	log.Printf("error: %T: %v", err, err)
+	goose.Log.Error(fmt.Sprintf("error: %T: %v", err, err))
 
 	if httpErr, ok := err.(*Error); ok {
 		http.Error(w, httpErr.Error(), httpErr.Code)
@@ -100,12 +105,15 @@ func enableCORS(h http.Handler) http.Handler {
 	})
 }
 
+// WriteJSON sets the Content-Type header of the given ResponseWriter to JSON an writes the given data to it
 func WriteJSON(w http.ResponseWriter, d interface{}) error {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", "application/json")
 	return enc.Encode(d)
 }
 
+// ProcessError can convert between errors. For example, it can map model-layer errors (like a not found from database)
+// to HTTP-layer errors (the equivalent 404 Not Found error)
 func ProcessError(err error) error {
 	if err == goose.ErrNotFound {
 		return NewError(404, "Not found")
@@ -116,11 +124,13 @@ func ProcessError(err error) error {
 	return err
 }
 
+// GetSubdomain returns the subdomain string from the given Request object
 func GetSubdomain(r *http.Request) string {
 	i := strings.Index(r.Host, ".")
 	return r.Host[0:i]
 }
 
+// PrefixSlash adds a slash "/" at the beginning of the given string if not already present
 func PrefixSlash(path string) string {
 	if path[0:1] == "/" {
 		return path

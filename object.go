@@ -2,7 +2,6 @@ package goose
 
 import (
 	"io"
-	"log"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -103,7 +102,6 @@ func (or *objectRepo) Create(r io.Reader, name, ctype string, metadata *ObjectMe
 }
 
 func (r *objectRepo) UpdateMetada(ID, name string, metadata ObjectMetadata) error {
-	log.Printf("ObjectID: %v", ID)
 	return r.gfs.Files.Update(bson.M{"_id": bson.ObjectIdHex(ID)}, bson.M{"$set": bson.M{"metadata": metadata, "objectname": name}})
 }
 
@@ -115,12 +113,17 @@ func (r *objectRepo) OpenId(id string) (*Object, error) {
 	return &Object{GridFile: gridFile}, nil
 }
 
-func (r *objectRepo) Open(filename string, ID bson.ObjectId) (*Object, error) {
+func (r *objectRepo) Open(filename string) (*Object, error) {
 	gridFile, err := r.gfs.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	return &Object{GridFile: gridFile}, nil
+}
+
+func (r *objectRepo) OpenFromBucket(filename string, bucketID bson.ObjectId) (*Object, error) {
+	iter := r.gfs.Find(bson.M{"filename": filename, "metadata.bucketId": bucketID}).Sort("-uploadDate").Iter()
+	return r.iterToObject(iter)
 }
 
 func (r *objectRepo) DeleteId(id string) error {

@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -12,11 +12,12 @@ import (
 	ghttp "bitbucket.org/syb-devs/goose/http"
 )
 
+// ErrNoBucketURL is a 404 Error returned when there's no valid bucket name found in the host name (subdomain) or requested URI (first URL part)
 var ErrNoBucketURL = ghttp.NewError(404, "invalid bucket in URL")
 
 func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	bucketName, fileName, err := getBucketObjectNames(r)
-	log.Printf("\nBucket: %s\nFile: %s", bucketName, fileName)
+	goose.Log.Debug(fmt.Sprintf("serving object [%s] from bucket [%s]", fileName, bucketName))
 	if err != nil {
 		return ghttp.ProcessError(err)
 	}
@@ -27,7 +28,7 @@ func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 	}
 
 	repo := goose.NewObjectRepo(ctx.DB)
-	obj, err := repo.Open(fileName, bucket.ID)
+	obj, err := repo.OpenFromBucket(fileName, bucket.ID)
 	if err != nil {
 		return ghttp.ProcessError(err)
 	}
@@ -39,9 +40,10 @@ func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 
 func postObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	fname := ghttp.PrefixSlash(r.URL.Query().Get("name"))
-	log.Printf("Posting object with path %s", fname)
+	bucketID := ctx.URLParams.ByName("bucket")
+	goose.Log.Debug(fmt.Sprintf("posting object to bucket %s with path %s", bucketID, fname))
 
-	bucket, err := getBucketAndCheckAccess(ctx, ctx.URLParams.ByName("bucket"), "id", "write")
+	bucket, err := getBucketAndCheckAccess(ctx, bucketID, "id", "write")
 	if err != nil {
 		return ghttp.ProcessError(err)
 	}
@@ -62,7 +64,6 @@ func postObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) erro
 	}
 	defer object.Close()
 	return ghttp.WriteJSON(w, object)
-
 }
 
 func getObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {

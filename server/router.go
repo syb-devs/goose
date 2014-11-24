@@ -12,7 +12,7 @@ type router struct {
 	*httptreemux.TreeMux
 }
 
-func NewRouter() *router {
+func newRouter() *router {
 	return &router{TreeMux: httptreemux.New()}
 }
 
@@ -29,7 +29,7 @@ func (rt *router) isAPI(r *http.Request) bool {
 	return strings.HasPrefix(r.Host, "api.")
 }
 
-func (rt *router) WithRoutes() *router {
+func (rt *router) withRoutes() *router {
 	ctx := ghttp.HandlerAdapter
 
 	rt.POST("/buckets", ctx(postBucket))
