@@ -12,16 +12,28 @@ import (
 // but another with the same name already exists
 var ErrBucketExists = ghttp.NewError(409, "the bucket already exists")
 
+type reqBucket struct {
+	Name *string
+}
+
+func (b *reqBucket) Apply(bucket *goose.Bucket) {
+	if b.Name != nil {
+		bucket.Name = *b.Name
+	}
+}
+
 func postBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	//TODO: validation of the POSTed data
 	repo := goose.NewBucketRepo(ctx.DB)
-	bucket, err := bucketFromRequest(*r)
+	reqBucket, err := bucketFromRequest(*r)
 	if err != nil {
 		return err
 	}
-	if repo.Exists(bucket.Name) {
+	if repo.Exists(*reqBucket.Name) {
 		return ErrBucketExists
 	}
+	bucket := &goose.Bucket{}
+	reqBucket.Apply(bucket)
 	err = repo.Insert(bucket)
 	if err != nil {
 		return err
@@ -51,10 +63,13 @@ func putBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error
 		return ghttp.ErrForbidden
 	}
 	dec := json.NewDecoder(r.Body)
-	err = dec.Decode(bucket)
+	var reqBucket *reqBucket
+	err = dec.Decode(reqBucket)
 	if err != nil {
 		return err
 	}
+	reqBucket.Apply(bucket)
+
 	if err = repo.Update(bucket); err != nil {
 		return ghttp.ProcessError(err)
 	}
@@ -73,8 +88,8 @@ func deleteBucket(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) er
 	return ghttp.ProcessError(repo.DeleteId(ctx.URLParams.ByName("bucket")))
 }
 
-func bucketFromRequest(r http.Request) (*goose.Bucket, error) {
-	bucket := &goose.Bucket{}
+func bucketFromRequest(r http.Request) (*reqBucket, error) {
+	bucket := &reqBucket{}
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(bucket)
 

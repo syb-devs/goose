@@ -2,6 +2,7 @@ package goose
 
 import (
 	"io"
+	"time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -11,9 +12,31 @@ func init() {
 	RegisterDBInitTask(func(db *DBConn) error { return NewObjectRepo(db).Init() })
 }
 
+type ExtractedObject struct {
+	Id          bson.ObjectId
+	UploadDate  time.Time
+	Size        int64
+	MD5         string
+	Name        string
+	ContentType string
+	Metadata    ObjectMetadata
+}
+
 type Object struct {
 	*mgo.GridFile
 	metadata *ObjectMetadata
+}
+
+func (o *Object) Extract() ExtractedObject {
+	return ExtractedObject{
+		Id:          o.Id(),
+		UploadDate:  o.UploadDate(),
+		Size:        o.Size(),
+		MD5:         o.MD5(),
+		Name:        o.Name(),
+		ContentType: o.ContentType(),
+		Metadata:    *o.Metadata(),
+	}
 }
 
 func (f *Object) Id() bson.ObjectId {

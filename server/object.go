@@ -15,6 +15,28 @@ import (
 // ErrNoBucketURL is a 404 Error returned when there's no valid bucket name found in the host name (subdomain) or requested URI (first URL part)
 var ErrNoBucketURL = ghttp.NewError(404, "invalid bucket in URL")
 
+type reqObjectMetadata struct {
+	Title       *string
+	Description *string
+	Tags        []string
+	Custom      map[string]interface{}
+}
+
+func (m *reqObjectMetadata) Apply(meta *goose.ObjectMetadata) {
+	if m.Title != nil {
+		meta.Title = *m.Title
+	}
+	if m.Description != nil {
+		meta.Description = *m.Description
+	}
+	if m.Tags != nil {
+		meta.Tags = m.Tags
+	}
+	for k, v := range m.Custom {
+		meta.Custom[k] = v
+	}
+}
+
 func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	bucketName, fileName, err := getBucketObjectNames(r)
 	goose.Log.Debug(fmt.Sprintf("serving object [%s] from bucket [%s]", fileName, bucketName))
@@ -72,7 +94,7 @@ func getObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error
 	if err != nil {
 		return ghttp.ProcessError(err)
 	}
-	return ghttp.WriteJSON(w, object)
+	return ghttp.WriteJSON(w, object.Extract())
 }
 
 func deleteObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
@@ -94,12 +116,14 @@ func postObjectMetadata(w http.ResponseWriter, r *http.Request, ctx *ghttp.Conte
 	if err != nil {
 		return ghttp.ProcessError(err)
 	}
-	meta := object.Metadata()
+	reqMeta := &reqObjectMetadata{}
 	dec := json.NewDecoder(r.Body)
-	err = dec.Decode(meta)
+	err = dec.Decode(reqMeta)
 	if err != nil {
 		return ghttp.ProcessError(err)
 	}
+	meta := object.Metadata()
+	reqMeta.Apply(meta)
 	return repo.UpdateMetada(object.Id().Hex(), object.Name(), *meta)
 }
 
