@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"bitbucket.org/syb-devs/goose"
+	"github.com/syb-devs/goose"
 )
 
 // Context holds request-specific data

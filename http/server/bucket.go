@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"bitbucket.org/syb-devs/goose"
-	ghttp "bitbucket.org/syb-devs/goose/http"
+	"github.com/syb-devs/goose"
+	ghttp "github.com/syb-devs/goose/http"
 )
 
 // ErrBucketExists represents an HTTP 409 error, returned when the user is trying to create a bucket,

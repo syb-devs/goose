@@ -7,8 +7,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"bitbucket.org/syb-devs/goose"
 	"github.com/dimfeld/httptreemux"
+	"github.com/syb-devs/goose"
 )
 
 // ErrForbidden represents an HTTP 403 error

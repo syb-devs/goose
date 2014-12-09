@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	ghttp "bitbucket.org/syb-devs/goose/http"
 	"github.com/dimfeld/httptreemux"
+	ghttp "github.com/syb-devs/goose/http"
 )
 
 type router struct {

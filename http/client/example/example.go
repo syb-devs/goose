@@ -6,8 +6,8 @@ import (
 	"os"
 	"runtime/debug"
 
-	ghttp "bitbucket.org/syb-devs/goose/http"
-	"bitbucket.org/syb-devs/goose/http/client"
+	ghttp "github.com/syb-devs/goose/http"
+	"github.com/syb-devs/goose/http/client"
 )
 
 func main() {

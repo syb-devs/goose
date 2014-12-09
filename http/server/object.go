@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/syb-devs/goose"
-	ghttp "bitbucket.org/syb-devs/goose/http"
+	"github.com/syb-devs/goose"
+	ghttp "github.com/syb-devs/goose/http"
 )
 
 // ErrNoBucketURL is a 404 Error returned when there's no valid bucket name found in

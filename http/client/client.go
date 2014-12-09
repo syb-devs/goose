@@ -10,7 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	ghttp "bitbucket.org/syb-devs/goose/http"
+	ghttp "github.com/syb-devs/goose/http"
 )
 
 const (

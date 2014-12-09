@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"bitbucket.org/syb-devs/goose"
+	"github.com/syb-devs/goose"
 )
 
 func main() {

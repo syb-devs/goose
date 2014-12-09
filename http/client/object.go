@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io"
 
-	"bitbucket.org/syb-devs/goose"
+	"github.com/syb-devs/goose"
 )
 
 var (

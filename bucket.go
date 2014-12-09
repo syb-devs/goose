@@ -1,7 +1,7 @@
 package goose
 
 import (
-	"bitbucket.org/syb-devs/gotools/time"
+	"github.com/syb-devs/gotools/time"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )

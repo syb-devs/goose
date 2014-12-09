@@ -1,7 +1,7 @@
 package client
 
 import (
-	"bitbucket.org/syb-devs/goose"
+	"github.com/syb-devs/goose"
 )
 
 type BucketsService struct {

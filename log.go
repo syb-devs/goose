@@ -3,7 +3,7 @@ package goose
 import (
 	"os"
 
-	"bitbucket.org/syb-devs/gotools/log"
+	"github.com/syb-devs/gotools/log"
 )
 
 // Log is the global app logger
