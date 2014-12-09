@@ -1,5 +1,7 @@
 package goose
 
+//TODO: basic ACL
+//TODO: retrieve the user from JWT auth in the request
 type User struct {
 }
 

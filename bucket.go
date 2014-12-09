@@ -11,11 +11,11 @@ func init() {
 }
 
 type Bucket struct {
-	ID          bson.ObjectId `bson:"_id" json:"Id"`
-	Name        string        `bson:"name"`
-	Collection  string
-	Objects     int
-	Size        int
+	ID          bson.ObjectId `bson:"_id" json:"id"`
+	Name        string        `bson:"name" json:"name"`
+	Collection  string        `json:"collection"`
+	Objects     int           `json:"collection"`
+	Size        int           `json:"collection"`
 	time.Stamps `bson:",inline"`
 }
 

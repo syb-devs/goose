@@ -102,8 +102,12 @@ func (l *dbLogger) Output(calldepth int, s string) error {
 	return nil
 }
 
+func ValidObjectID(ID string) bool {
+	return bson.IsObjectIdHex(ID)
+}
+
 func checkObjectId(ID string) error {
-	if !bson.IsObjectIdHex(ID) {
+	if !ValidObjectID(ID) {
 		return ErrInvalidIDFormat
 	}
 	return nil

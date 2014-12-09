@@ -26,6 +26,9 @@ type Error struct {
 
 // NewError returns a new Error with the given HTTP code and message
 func NewError(code int, message string) *Error {
+	if message == "" {
+		message = http.StatusText(code)
+	}
 	return &Error{Code: code, Message: message}
 }
 
@@ -44,6 +47,8 @@ func (ps URLParams) ByName(name string) string {
 // HandlerAdapter is a function adapter which converts a Goose HandlerFunc to a httptreemux.HandlerFunc
 func HandlerAdapter(f HandlerFunc) httptreemux.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, ps map[string]string) {
+		goose.Log.Debug(fmt.Sprintf("%v %v", r.Method, r.URL.Path))
+
 		defer panicHandler(w, r)
 
 		ctx, err := newContext(r, ps)
@@ -75,11 +80,13 @@ func panicHandler(w http.ResponseWriter, r *http.Request) {
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	goose.Log.Error(fmt.Sprintf("error: %T: %v", err, err))
 
+	var respErr *Error
 	if httpErr, ok := err.(*Error); ok {
-		http.Error(w, httpErr.Error(), httpErr.Code)
+		respErr = httpErr
 	} else {
-		http.Error(w, "Server error", 500)
+		respErr = NewError(500, "")
 	}
+	WriteJSON(w, respErr.Code, respErr)
 }
 
 func enableCORS(h http.Handler) http.Handler {
@@ -106,9 +113,12 @@ func enableCORS(h http.Handler) http.Handler {
 }
 
 // WriteJSON sets the Content-Type header of the given ResponseWriter to JSON an writes the given data to it
-func WriteJSON(w http.ResponseWriter, d interface{}) error {
+func WriteJSON(w http.ResponseWriter, status int, d interface{}) error {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", "application/json")
+	if status > 0 {
+		w.WriteHeader(status)
+	}
 	return enc.Encode(d)
 }
 

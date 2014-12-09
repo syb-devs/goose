@@ -12,43 +12,44 @@ func init() {
 	RegisterDBInitTask(func(db *DBConn) error { return NewObjectRepo(db).Init() })
 }
 
-type ExtractedObject struct {
-	Id          bson.ObjectId
-	UploadDate  time.Time
-	Size        int64
-	MD5         string
-	Name        string
-	ContentType string
-	Metadata    ObjectMetadata
-}
-
 type Object struct {
-	*mgo.GridFile
-	metadata *ObjectMetadata
+	ID          bson.ObjectId   `json:"id"`
+	UploadDate  time.Time       `json:"uploadDate"`
+	Size        int64           `json:"size"`
+	MD5         string          `json:"md5"`
+	Name        string          `json:"name"`
+	ContentType string          `json:"contentType"`
+	Metadata    *ObjectMetadata `json:"metadata"`
+	gf          *mgo.GridFile
 }
 
-func (o *Object) Extract() ExtractedObject {
-	return ExtractedObject{
-		Id:          o.Id(),
-		UploadDate:  o.UploadDate(),
-		Size:        o.Size(),
-		MD5:         o.MD5(),
-		Name:        o.Name(),
-		ContentType: o.ContentType(),
-		Metadata:    *o.Metadata(),
+func newObjectFromGridFile(f *mgo.GridFile, fill bool) *Object {
+	obj := &Object{gf: f}
+	if fill {
+		obj.FillData()
 	}
+	return obj
 }
 
-func (f *Object) Id() bson.ObjectId {
-	return f.GridFile.Id().(bson.ObjectId)
+func (o *Object) GetID() bson.ObjectId {
+	return o.gf.Id().(bson.ObjectId)
 }
 
-func (f *Object) Metadata() *ObjectMetadata {
-	if f.metadata == nil {
-		f.metadata = &ObjectMetadata{}
-		f.GetMeta(&f.metadata)
+func (o *Object) GridFile() *mgo.GridFile {
+	return o.gf
+}
+
+func (o *Object) FillData() {
+	o.ID = o.gf.Id().(bson.ObjectId)
+	o.UploadDate = o.gf.UploadDate()
+	o.Size = o.gf.Size()
+	o.MD5 = o.gf.MD5()
+	o.Name = o.gf.Name()
+	o.ContentType = o.gf.ContentType()
+	if o.Metadata == nil {
+		o.Metadata = &ObjectMetadata{}
+		o.gf.GetMeta(&o.Metadata)
 	}
-	return f.metadata
 }
 
 type ObjectList struct {
@@ -68,12 +69,12 @@ func (fl *ObjectList) Close() error {
 }
 
 type ObjectMetadata struct {
-	BucketID    bson.ObjectId          `bson:"bucketId"`
-	UploaderID  bson.ObjectId          `bson:"uploaderId,omitempty"`
-	Title       string                 `bson:"title,omitempty"`
-	Description string                 `bson:"description,omitempty"`
-	Tags        []string               `bson:"tags,omitempty"`
-	Custom      map[string]interface{} `bson:"custom,omitempty"`
+	BucketID    bson.ObjectId          `bson:"bucketId" json:"bucketId,omitempty"`
+	UploaderID  bson.ObjectId          `bson:"uploaderId,omitempty" json:"uploaderId,omitempty"`
+	Title       string                 `bson:"title,omitempty" json:"title"`
+	Description string                 `bson:"description,omitempty" json:"description"`
+	Tags        []string               `bson:"tags,omitempty" json:"tags"`
+	Custom      map[string]interface{} `bson:"custom,omitempty" json:"custom"`
 }
 
 type objectRepo struct {
@@ -101,14 +102,14 @@ func (or *objectRepo) create(name, ctype string, metadata *ObjectMetadata) (*Obj
 		return nil, err
 	}
 	object := &Object{
-		GridFile: gObject,
+		gf: gObject,
 	}
-	object.SetName(name)
+	object.gf.SetName(name)
 	if ctype != "" {
-		object.SetContentType(ctype)
+		object.gf.SetContentType(ctype)
 	}
 	if metadata != nil {
-		object.SetMeta(metadata)
+		object.gf.SetMeta(metadata)
 	}
 	return object, nil
 }
@@ -118,9 +119,10 @@ func (or *objectRepo) Create(r io.Reader, name, ctype string, metadata *ObjectMe
 	if err != nil {
 		return object, err
 	}
-	defer object.Close()
+	defer object.gf.Close()
 
-	_, err = io.Copy(object, r)
+	_, err = io.Copy(object.gf, r)
+	object.FillData()
 	return object, err
 }
 
@@ -128,12 +130,12 @@ func (r *objectRepo) UpdateMetada(ID, name string, metadata ObjectMetadata) erro
 	return r.gfs.Files.Update(bson.M{"_id": bson.ObjectIdHex(ID)}, bson.M{"$set": bson.M{"metadata": metadata, "objectname": name}})
 }
 
-func (r *objectRepo) OpenId(id string) (*Object, error) {
-	gridFile, err := r.gfs.OpenId(bson.ObjectIdHex(id))
+func (r *objectRepo) OpenId(ID string) (*Object, error) {
+	gridFile, err := r.gfs.OpenId(bson.ObjectIdHex(ID))
 	if err != nil {
 		return nil, err
 	}
-	return &Object{GridFile: gridFile}, nil
+	return newObjectFromGridFile(gridFile, true), nil
 }
 
 func (r *objectRepo) Open(filename string) (*Object, error) {
@@ -141,7 +143,7 @@ func (r *objectRepo) Open(filename string) (*Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Object{GridFile: gridFile}, nil
+	return newObjectFromGridFile(gridFile, true), nil
 }
 
 func (r *objectRepo) OpenFromBucket(filename string, bucketID bson.ObjectId) (*Object, error) {
@@ -149,14 +151,14 @@ func (r *objectRepo) OpenFromBucket(filename string, bucketID bson.ObjectId) (*O
 	return r.iterToObject(iter)
 }
 
-func (r *objectRepo) DeleteId(id string) error {
-	return r.gfs.RemoveId(bson.ObjectIdHex(id))
+func (r *objectRepo) DeleteId(ID string) error {
+	return r.gfs.RemoveId(bson.ObjectIdHex(ID))
 }
 
 func (r *objectRepo) iterToObject(iter *mgo.Iter) (*Object, error) {
 	var f *mgo.GridFile
 	if r.gfs.OpenNext(iter, &f) {
-		return &Object{GridFile: f}, nil
+		return newObjectFromGridFile(f, true), nil
 	}
 	return nil, mgo.ErrNotFound
 }
@@ -166,13 +168,19 @@ func (r *objectRepo) iterToObjectList(iter *mgo.Iter) *ObjectList {
 
 	var f *mgo.GridFile
 	for r.gfs.OpenNext(iter, &f) {
-		fl.objects = append(fl.objects, &Object{GridFile: f})
+		fl.objects = append(fl.objects, newObjectFromGridFile(f, true))
 	}
 	return &fl
 }
 
 func (r *objectRepo) All() (*ObjectList, error) {
 	where := bson.M{}
+	iter := r.gfs.Find(where).Sort("-uploadDate").Iter()
+	return r.iterToObjectList(iter), nil
+}
+
+func (r *objectRepo) FindByBucket(bucketID bson.ObjectId, skip, limit int) (*ObjectList, error) {
+	where := bson.M{"metadata.bucketId": bucketID}
 	iter := r.gfs.Find(where).Sort("-uploadDate").Iter()
 	return r.iterToObjectList(iter), nil
 }
