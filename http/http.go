@@ -137,7 +137,10 @@ func ProcessError(err error) error {
 // GetSubdomain returns the subdomain string from the given Request object
 func GetSubdomain(r *http.Request) string {
 	i := strings.Index(r.Host, ".")
-	return r.Host[0:i]
+	if i > 0 {
+		return r.Host[0:i]
+	}
+	return ""
 }
 
 // PrefixSlash adds a slash "/" at the beginning of the given string if not already present
