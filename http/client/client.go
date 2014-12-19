@@ -53,7 +53,7 @@ func (s *Service) newRequest(method, url string, body io.Reader) (*http.Request,
 }
 
 func (s *Service) doRequest(method, url string, body io.Reader) (*http.Response, error) {
-	req, err := s.newRequest(method, url, nil)
+	req, err := s.newRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
