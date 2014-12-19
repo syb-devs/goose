@@ -4,7 +4,25 @@ Goose (Go Online Storage Engine) is a simple static file server implemented in G
 
 ## Quick usage examples
 
-### Bucket creation
+### Bucket operations
+
+#### Creation
+
+```
+curl  -X POST -v -H "Content-Type: application/json" -d '{"Name":"mybucket"}' http://api.goose.loc:3000/buckets
+```
+
+#### Retrieval by name
+
+```
+curl  -X GET -v http://api.goose.loc:3000/buckets/name/mybucket
+```
+
+#### Retrieval by ID
+
+```
+curl  -X GET -v http://api.goose.loc:3000/buckets/
+```
 
 
 ### File upload
