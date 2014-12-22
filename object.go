@@ -184,3 +184,9 @@ func (r *objectRepo) FindByBucket(bucketID bson.ObjectId, skip, limit int) (*Obj
 	iter := r.gfs.Find(where).Sort("-uploadDate").Iter()
 	return r.iterToObjectList(iter), nil
 }
+
+func (r *objectRepo) FindByIds(ids []string) (*ObjectList, error) {
+	where := bson.M{"_id": bson.M{"$in": ids}}
+	iter := r.gfs.Find(where).Sort("-uploadDate").Iter()
+	return r.iterToObjectList(iter), nil
+}

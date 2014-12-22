@@ -2,9 +2,9 @@ package client
 
 import (
 	"errors"
-	"io"
-
 	"github.com/syb-devs/goose"
+	"io"
+	"strings"
 )
 
 var (
@@ -82,6 +82,19 @@ func (sv *ObjectsService) Retrieve(bucketID, objectID string) (*goose.Object, er
 		return nil, err
 	}
 	return object, nil
+}
+
+func (sv *ObjectsService) RetrieveMany(bucketID string, objectIDs []string) ([]*goose.Object, error) {
+	queryStr := strings.Join(objectIDs, ",")
+	url, err := sv.s.url("/buckets/"+bucketID+"/objects/retrieveMany?ids="+queryStr, nil)
+	if err != nil {
+		return nil, err
+	}
+	objects := []*goose.Object{}
+	if err = sv.s.getInto(url, objects); err != nil {
+		return nil, err
+	}
+	return objects, nil
 }
 
 func (sv *ObjectsService) List(bucketID string) ([]goose.Object, error) {

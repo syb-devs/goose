@@ -77,6 +77,26 @@ func listObjects(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 	return ghttp.WriteJSON(w, 200, olist.Objects())
 }
 
+func getManyObjects(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
+	bucketID := ctx.URLParams.ByName("bucket")
+
+	_, err := getBucketAndCheckAccess(ctx, bucketID, "id", "read")
+	if err != nil {
+		return ghttp.ProcessError(err)
+	}
+	repo := goose.NewObjectRepo(ctx.DB)
+	queryVals := r.URL.Query()
+	queryStr := queryVals.Get("ids")
+	ids := strings.Split(queryStr, ",")
+
+	oList, err := repo.FindByIds(ids)
+	if err != nil {
+		return ghttp.ProcessError(err)
+	}
+	defer oList.Close()
+	return ghttp.WriteJSON(w, 200, oList.Objects())
+}
+
 func postObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	fname := ghttp.PrefixSlash(r.URL.Query().Get("name"))
 	bucketID := ctx.URLParams.ByName("bucket")
