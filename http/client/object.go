@@ -84,17 +84,17 @@ func (sv *ObjectsService) Retrieve(bucketID, objectID string) (*goose.Object, er
 	return object, nil
 }
 
-func (sv *ObjectsService) RetrieveMany(bucketID string, objectIDs []string) ([]*goose.Object, error) {
+func (sv *ObjectsService) RetrieveMany(bucketID string, objectIDs []string) ([]goose.Object, error) {
 	queryStr := strings.Join(objectIDs, ",")
-	url, err := sv.s.url("/buckets/"+bucketID+"/objects/retrieveMany?ids="+queryStr, nil)
+	url, err := sv.s.url("/buckets/"+bucketID+"/objects/getMany?ids="+queryStr, nil)
 	if err != nil {
 		return nil, err
 	}
-	objects := []*goose.Object{}
-	if err = sv.s.getInto(url, objects); err != nil {
+	oList := []goose.Object{}
+	if err = sv.s.getInto(url, &oList); err != nil {
 		return nil, err
 	}
-	return objects, nil
+	return oList, nil
 }
 
 func (sv *ObjectsService) List(bucketID string) ([]goose.Object, error) {
