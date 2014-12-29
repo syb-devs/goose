@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	// "fmt"
 	"github.com/syb-devs/goose"
 	"io"
 	"strings"
@@ -22,7 +23,7 @@ func NewObjectsService(s *Service) *ObjectsService {
 	return rs
 }
 
-func (sv *ObjectsService) Upload(bucketID, name, contentType string, data io.Reader) (*goose.Object, error) {
+func (sv *ObjectsService) Upload(bucketID, name, contentType string, data io.Reader, metaData *goose.ObjectMetadata) (*goose.Object, error) {
 	defer panicHandler()
 
 	if !goose.ValidObjectID(bucketID) {
@@ -31,9 +32,14 @@ func (sv *ObjectsService) Upload(bucketID, name, contentType string, data io.Rea
 	if name == "" {
 		return nil, ErrInvalidObjectName
 	}
+	d := dict{"name": name}
+	if metaData != nil {
+		d["uploaderID"] = metaData.UploaderID.Hex()
+	}
+
 	ps := &URLParams{
 		Path:  dict{"bucket": bucketID},
-		Query: dict{"name": name},
+		Query: d,
 	}
 	url, err := sv.s.url("/buckets/{bucket}/objects", ps)
 	if err != nil {

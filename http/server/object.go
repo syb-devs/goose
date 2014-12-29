@@ -10,6 +10,7 @@ import (
 
 	"github.com/syb-devs/goose"
 	ghttp "github.com/syb-devs/goose/http"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // ErrNoBucketURL is a 404 Error returned when there's no valid bucket name found in
@@ -108,6 +109,9 @@ func postObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) erro
 	}
 
 	meta := &goose.ObjectMetadata{BucketID: bucket.ID}
+	if r.URL.Query().Get("uploaderID") != "" {
+		meta.UploaderID = bson.ObjectIdHex(r.URL.Query().Get("uploaderID"))
+	}
 	repo := goose.NewObjectRepo(ctx.DB)
 
 	var object *goose.Object

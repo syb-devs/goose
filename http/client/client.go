@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -151,6 +152,8 @@ func newCtxErr(message string, err error) error {
 
 func panicHandler() {
 	if p := recover(); p != nil {
-		print("recovering from panic: %v. \nstack trace: %s", p, debug.Stack())
+		fmt.Printf("Recovering from panic %+v \n", p)
+		fmt.Printf("Stack Trace : %s \n", debug.Stack())
+		// print("recovering from panic: %v. \nstack trace: %s", p, debug.Stack())
 	}
 }
