@@ -78,7 +78,7 @@ func listObjects(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 	return ghttp.WriteJSON(w, 200, olist.Objects())
 }
 
-func getManyObjects(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
+func listObjectsByIds(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	bucketID := ctx.URLParams.ByName("bucket")
 
 	_, err := getBucketAndCheckAccess(ctx, bucketID, "id", "read")
@@ -86,9 +86,8 @@ func getManyObjects(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) 
 		return ghttp.ProcessError(err)
 	}
 	repo := goose.NewObjectRepo(ctx.DB)
-	queryVals := r.URL.Query()
-	queryStr := queryVals.Get("ids")
-	ids := strings.Split(queryStr, ",")
+
+	ids := strings.Split(ctx.URLParams.ByName("objects"), ",")
 
 	oList, err := repo.FindByIds(ids)
 	if err != nil {

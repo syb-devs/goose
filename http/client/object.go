@@ -92,7 +92,7 @@ func (sv *ObjectsService) Retrieve(bucketID, objectID string) (*goose.Object, er
 
 func (sv *ObjectsService) RetrieveMany(bucketID string, objectIDs []string) ([]goose.Object, error) {
 	queryStr := strings.Join(objectIDs, ",")
-	url, err := sv.s.url("/buckets/"+bucketID+"/objects/getMany?ids="+queryStr, nil)
+	url, err := sv.s.url("/buckets/"+bucketID+"/objects/list/"+queryStr, nil)
 	if err != nil {
 		return nil, err
 	}
