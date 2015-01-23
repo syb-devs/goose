@@ -2,9 +2,10 @@ package client
 
 import (
 	"errors"
-	"io"
-
+	// "fmt"
 	"github.com/syb-devs/goose"
+	"io"
+	"strings"
 )
 
 var (
@@ -22,7 +23,7 @@ func NewObjectsService(s *Service) *ObjectsService {
 	return rs
 }
 
-func (sv *ObjectsService) Upload(bucketID, name, contentType string, data io.Reader) (*goose.Object, error) {
+func (sv *ObjectsService) Upload(bucketID, name, contentType string, data io.Reader, metaData *goose.ObjectMetadata) (*goose.Object, error) {
 	defer panicHandler()
 
 	if !goose.ValidObjectID(bucketID) {
@@ -31,9 +32,14 @@ func (sv *ObjectsService) Upload(bucketID, name, contentType string, data io.Rea
 	if name == "" {
 		return nil, ErrInvalidObjectName
 	}
+	d := dict{"name": name}
+	if metaData != nil {
+		d["uploaderID"] = metaData.UploaderID.Hex()
+	}
+
 	ps := &URLParams{
 		Path:  dict{"bucket": bucketID},
-		Query: dict{"name": name},
+		Query: d,
 	}
 	url, err := sv.s.url("/buckets/{bucket}/objects", ps)
 	if err != nil {
@@ -82,6 +88,19 @@ func (sv *ObjectsService) Retrieve(bucketID, objectID string) (*goose.Object, er
 		return nil, err
 	}
 	return object, nil
+}
+
+func (sv *ObjectsService) RetrieveMany(bucketID string, objectIDs []string) ([]goose.Object, error) {
+	queryStr := strings.Join(objectIDs, ",")
+	url, err := sv.s.url("/buckets/"+bucketID+"/objects/list/"+queryStr, nil)
+	if err != nil {
+		return nil, err
+	}
+	oList := []goose.Object{}
+	if err = sv.s.getInto(url, &oList); err != nil {
+		return nil, err
+	}
+	return oList, nil
 }
 
 func (sv *ObjectsService) List(bucketID string) ([]goose.Object, error) {

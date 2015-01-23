@@ -1,11 +1,10 @@
 package goose
 
 import (
-	"io"
-	"time"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"io"
+	"time"
 )
 
 func init() {
@@ -181,6 +180,16 @@ func (r *objectRepo) All() (*ObjectList, error) {
 
 func (r *objectRepo) FindByBucket(bucketID bson.ObjectId, skip, limit int) (*ObjectList, error) {
 	where := bson.M{"metadata.bucketId": bucketID}
+	iter := r.gfs.Find(where).Sort("-uploadDate").Iter()
+	return r.iterToObjectList(iter), nil
+}
+
+func (r *objectRepo) FindByIds(ids []string) (*ObjectList, error) {
+	var objIds []bson.ObjectId
+	for _, id := range ids {
+		objIds = append(objIds, bson.ObjectIdHex(id))
+	}
+	where := bson.M{"_id": bson.M{"$in": objIds}}
 	iter := r.gfs.Find(where).Sort("-uploadDate").Iter()
 	return r.iterToObjectList(iter), nil
 }

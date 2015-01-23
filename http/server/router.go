@@ -39,6 +39,7 @@ func (rt *router) withRoutes() *router {
 	rt.DELETE("/buckets/:bucket", ctx(deleteBucket))
 
 	rt.GET("/buckets/:bucket/objects", ctx(listObjects))
+	rt.GET("/buckets/:bucket/objects/list/:objects", ctx(listObjectsByIds))
 	rt.POST("/buckets/:bucket/objects", ctx(postObject))
 	rt.GET("/buckets/:bucket/objects/:object", ctx(getObject))
 	rt.DELETE("/buckets/:bucket/objects/:object", ctx(deleteObject))

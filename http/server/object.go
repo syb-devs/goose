@@ -10,6 +10,7 @@ import (
 
 	"github.com/syb-devs/goose"
 	ghttp "github.com/syb-devs/goose/http"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // ErrNoBucketURL is a 404 Error returned when there's no valid bucket name found in
@@ -77,6 +78,25 @@ func listObjects(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 	return ghttp.WriteJSON(w, 200, olist.Objects())
 }
 
+func listObjectsByIds(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
+	bucketID := ctx.URLParams.ByName("bucket")
+
+	_, err := getBucketAndCheckAccess(ctx, bucketID, "id", "read")
+	if err != nil {
+		return ghttp.ProcessError(err)
+	}
+	repo := goose.NewObjectRepo(ctx.DB)
+
+	ids := strings.Split(ctx.URLParams.ByName("objects"), ",")
+
+	oList, err := repo.FindByIds(ids)
+	if err != nil {
+		return ghttp.ProcessError(err)
+	}
+	defer oList.Close()
+	return ghttp.WriteJSON(w, 200, oList.Objects())
+}
+
 func postObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
 	fname := ghttp.PrefixSlash(r.URL.Query().Get("name"))
 	bucketID := ctx.URLParams.ByName("bucket")
@@ -88,6 +108,9 @@ func postObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) erro
 	}
 
 	meta := &goose.ObjectMetadata{BucketID: bucket.ID}
+	if r.URL.Query().Get("uploaderID") != "" {
+		meta.UploaderID = bson.ObjectIdHex(r.URL.Query().Get("uploaderID"))
+	}
 	repo := goose.NewObjectRepo(ctx.DB)
 
 	var object *goose.Object
