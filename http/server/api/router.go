@@ -1,36 +1,13 @@
 package main
 
 import (
-	"net/http"
-	"strings"
-
 	"github.com/dimfeld/httptreemux"
 	ghttp "github.com/syb-devs/goose/http"
 )
 
-type router struct {
-	*httptreemux.TreeMux
-}
-
-func newRouter() *router {
-	return &router{TreeMux: httptreemux.New()}
-}
-
-func (rt *router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if rt.isAPI(r) {
-		rt.TreeMux.ServeHTTP(w, r)
-		return
-	}
-	ghttp.HandlerAdapter(serveObject)(w, r, nil)
-}
-
-func (rt *router) isAPI(r *http.Request) bool {
-	//TODO: enable customisation
-	return strings.HasPrefix(r.Host, "api.")
-}
-
-func (rt *router) withRoutes() *router {
-	ctx := ghttp.HandlerAdapter
+func newRouter() *httptreemux.TreeMux {
+	rt := httptreemux.New()
+	ctx := ghttp.HandlerAdapterTreeMux
 
 	rt.POST("/buckets", ctx(postBucket))
 	rt.GET("/buckets/:bucket", ctx(getBucket))

@@ -18,7 +18,7 @@ func main() {
 	})
 
 	addr := fmt.Sprintf(":%s", envDefault("PORT", "8080"))
-	log.Fatal(http.ListenAndServe(addr, newRouter().withRoutes()))
+	log.Fatal(http.ListenAndServe(addr, newRouter()))
 }
 
 func envDefault(key, defval string) string {

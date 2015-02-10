@@ -4,18 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 
 	"github.com/syb-devs/goose"
 	ghttp "github.com/syb-devs/goose/http"
 	"gopkg.in/mgo.v2/bson"
 )
-
-// ErrNoBucketURL is a 404 Error returned when there's no valid bucket name found in
-// the host name (subdomain) or requested URI (first URL part)
-var ErrNoBucketURL = ghttp.NewError(404, "invalid bucket in URL")
 
 type reqObjectMetadata struct {
 	Title       *string
@@ -37,29 +31,6 @@ func (m *reqObjectMetadata) Apply(meta *goose.ObjectMetadata) {
 	for k, v := range m.Custom {
 		meta.Custom[k] = v
 	}
-}
-
-func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
-	bucketName, fileName, err := getBucketObjectNames(r)
-	goose.Log.Debug(fmt.Sprintf("serving object [%s] from bucket [%s]", fileName, bucketName))
-	if err != nil {
-		return ghttp.ProcessError(err)
-	}
-
-	bucket, err := getBucketAndCheckAccess(ctx, bucketName, "name", "read")
-	if err != nil {
-		return ghttp.ProcessError(err)
-	}
-
-	repo := goose.NewObjectRepo(ctx.DB)
-	obj, err := repo.OpenFromBucket(fileName, bucket.ID)
-	if err != nil {
-		return ghttp.ProcessError(err)
-	}
-
-	defer obj.GridFile().Close()
-	_, err = io.Copy(w, obj.GridFile())
-	return err
 }
 
 func listObjects(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) error {
@@ -214,16 +185,4 @@ func getBucketAndCheckAccess(ctx *ghttp.Context, key, keyType, op string) (*goos
 		return bucket, errors.New("invalid value for op (accepted are 'read' and 'write'")
 	}
 	return bucket, nil
-}
-
-func getBucketObjectNames(r *http.Request) (bucket, object string, err error) {
-	subdomain := ghttp.GetSubdomain(r)
-	if subdomain == "storage" {
-		urlParts := strings.SplitN(r.URL.RequestURI()[1:], "/", 2)
-		if len(urlParts) < 2 {
-			return "", "", ErrNoBucketURL
-		}
-		return urlParts[0], ghttp.PrefixSlash(urlParts[1]), nil
-	}
-	return subdomain, r.URL.RequestURI(), nil
 }
