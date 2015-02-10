@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/syb-devs/goose"
 	ghttp "github.com/syb-devs/goose/http"
