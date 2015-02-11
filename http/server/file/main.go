@@ -75,7 +75,7 @@ func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 
 func getBucketObjectNames(r *http.Request) (bucket, object string, err error) {
 	subdomain := ghttp.GetSubdomain(r)
-	if subdomain == "storage" {
+	if subdomain == "storage" || subdomain == "" {
 		urlParts := strings.SplitN(r.URL.RequestURI()[1:], "/", 2)
 		if len(urlParts) < 2 {
 			return "", "", ErrNoBucketURL
