@@ -18,6 +18,8 @@ func main() {
 	})
 
 	addr := fmt.Sprintf(":%s", envDefault("PORT", "8080"))
+
+	log.Printf("Goose API server listening on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, newRouter()))
 }
 

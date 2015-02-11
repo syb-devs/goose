@@ -25,6 +25,7 @@ func main() {
 	})
 
 	addr := fmt.Sprintf(":%s", envDefault("PORT", "80"))
+	log.Printf("Goose file server listening on %s", addr)
 	ctx := ghttp.HandlerAdapter
 	log.Fatal(http.ListenAndServe(addr, http.HandlerFunc(ctx(serveObject))))
 }
