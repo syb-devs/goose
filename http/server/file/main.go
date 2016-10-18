@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -55,6 +56,12 @@ func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 		return ghttp.ProcessError(err)
 	}
 
+	fileName, err = url.QueryUnescape(fileName)
+	if err != nil {
+		return ghttp.ProcessError(err)
+	}
+	goose.Log.Debug(fmt.Sprintf("unescaped fileName: [%s]", fileName))
+
 	br := goose.NewBucketRepo(ctx.DB)
 	bucket, err := br.FindName(bucketName)
 
@@ -75,12 +82,12 @@ func serveObject(w http.ResponseWriter, r *http.Request, ctx *ghttp.Context) err
 
 func getBucketObjectNames(r *http.Request) (bucket, object string, err error) {
 	subdomain := ghttp.GetSubdomain(r)
-	if subdomain == "storage" || subdomain == "" {
-		urlParts := strings.SplitN(r.URL.RequestURI()[1:], "/", 2)
-		if len(urlParts) < 2 {
-			return "", "", ErrNoBucketURL
-		}
-		return urlParts[0], ghttp.PrefixSlash(urlParts[1]), nil
+	if subdomain != "storage" && subdomain != "" {
+		return subdomain, r.URL.RequestURI(), nil
 	}
-	return subdomain, r.URL.RequestURI(), nil
+	urlParts := strings.SplitN(r.URL.RequestURI()[1:], "/", 2)
+	if len(urlParts) < 2 {
+		return "", "", ErrNoBucketURL
+	}
+	return urlParts[0], ghttp.PrefixSlash(urlParts[1]), nil
 }
