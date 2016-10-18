@@ -1,0 +1,19 @@
+mongodb:
+  image: "mongo:3.0"
+  ports:
+    - "127.0.0.1:27017:27017"
+  volumes:
+    - /data/mongodb:/data/db
+gooseapi:
+  build: "."
+  command: "api"
+  links:
+    - "mongodb:mongodb"
+  ports:
+    - "127.0.0.1:3000:80"
+goose:
+  build: "."
+  links:
+    - "mongodb:mongodb"
+  ports:
+    - "127.0.0.1:8080:80"
