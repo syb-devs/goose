@@ -17,7 +17,7 @@ func main() {
 
 	// Setup the service
 	print("setting up the API client...")
-	service, err := client.New(&http.Client{}, "http://api.goose.loc:3000")
+	service, err := client.New(&http.Client{}, "http://localhost:3000")
 	handle(err)
 
 	// Get the bucket
@@ -40,7 +40,7 @@ func main() {
 	file, err := os.Open("tesla_colorado.jpg")
 	handle(err)
 
-	object, err := service.Objects.Upload(bucket.ID.Hex(), "/uploads/tesla_colorado.jpg", "image/jpeg", file)
+	object, err := service.Objects.Upload(bucket.ID.Hex(), "/uploads/tesla colorado.jpg", "image/jpeg", file, nil)
 	handle(err)
 	print("\nfile uploaded: %+v", object)
 
