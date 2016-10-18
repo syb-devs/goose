@@ -44,14 +44,38 @@ func (ps URLParams) ByName(name string) string {
 	return ps[name]
 }
 
-// HandlerAdapter is a function adapter which converts a Goose HandlerFunc to a httptreemux.HandlerFunc
-func HandlerAdapter(f HandlerFunc) httptreemux.HandlerFunc {
+// HandlerAdapterTreeMux is a function adapter which converts a Goose HandlerFunc to a httptreemux.HandlerFunc
+func HandlerAdapterTreeMux(f HandlerFunc) httptreemux.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, ps map[string]string) {
 		goose.Log.Debug(fmt.Sprintf("%v %v", r.Method, r.URL.Path))
 
 		defer panicHandler(w, r)
 
 		ctx, err := newContext(r, ps)
+		defer ctx.close()
+
+		if err != nil {
+			panic(fmt.Sprintf("error creating a new context: %v", err))
+		}
+
+		// Run the wrapped handler
+		err = f(w, r, ctx)
+		if err != nil {
+			handleError(w, r, err)
+			return
+		}
+	}
+}
+
+// TODO(zareone): unify HandlerAdapterTreeMux and HandlerAdapter functions?
+// HandlerAdapter is a function adapter which converts a Goose HandlerFunc to a httptreemux.HandlerFunc
+func HandlerAdapter(f HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		goose.Log.Debug(fmt.Sprintf("%v %v", r.Method, r.URL.Path))
+
+		defer panicHandler(w, r)
+
+		ctx, err := newContext(r, nil)
 		defer ctx.close()
 
 		if err != nil {
